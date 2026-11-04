@@ -19,7 +19,13 @@
   }
   /* ค่าที่ซิงก์มา → คีย์เดิมที่หน้าอื่นอ่านอยู่ (Home / รายจ่ายรายวัน) ; ครั้งแรกให้ย้ายงบเดิมในเครื่องเข้ามา */
   function hydrate(){
-    /* งบรายวัน (budget) ถูกเอาออกจากแอปแล้ว — ไม่สร้าง/แก้ record 'budget' อีก เพื่อไม่ให้เกิดข้อมูลชนกันตอนซิงก์ */
+    try{
+      var b=all().filter(function(x){return x.id==='budget'})[0];
+      if(b){ localStorage.setItem(LEGACY_BUDGET,b.value); return; }
+      var raw=localStorage.getItem(LEGACY_BUDGET); if(!raw) return;
+      var o=JSON.parse(raw);
+      if(o&&(Number(o.total)>0||Object.keys(o.cats||{}).length)) set('budget',o);
+    }catch(e){}
   }
   window.MFFSettings={get:get,set:set,hydrate:hydrate};
 })();

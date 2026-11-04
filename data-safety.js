@@ -14,7 +14,7 @@
      base looks "changed" forever even when nothing changed, and the offline-queue
      badge can never reach zero because syncing itself creates new queue entries.
      So these keys are left completely untouched here — Smart Sync alone owns them. */
-  const syncEngineOwned=/^mff_(daily_cache_v1|money_cache_v3|bookshelf_cache_v1|profiles_cache_v1|business_cache_v1|notes_cache_v1|goals_cache_v1|diary_cache_v1|wishlist_cache_v1|settings_cache_v1|bookshelf_meta_cache_v1|bookshelf_search_cache_v2|calendar_cache_v1|sync_base_v1_|sync_dirty_v1_|sync_backup_v2|sync_history_v2)/;
+  const syncEngineOwned=/^mff_(daily_cache_v1|money_cache_v3|bookshelf_cache_v1|profiles_cache_v1|business_cache_v1|notes_cache_v1|goals_cache_v1|diary_cache_v1|wishlist_cache_v1|settings_cache_v1|sync_base_v1_|sync_dirty_v1_|sync_backup_v2|sync_history_v2)/;
   const clone=o=>{try{return JSON.parse(JSON.stringify(o));}catch(e){return o;}};
   const read=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}};
   const write=(k,v)=>{try{if(typeof rawSet==='function') rawSet(k,JSON.stringify(v)); else localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}};
@@ -43,10 +43,6 @@
       if(idx>=0){q[idx]=item;replaced=true;}
     }else if(key && id){
       const idx=q.findIndex(x=>String(x.key||'')===key && String(x.id||'')===id);
-      if(idx>=0){q[idx]=item;replaced=true;}
-    }else if(item.type==='upsert' && key && !id){
-      /* ค่าแบบ object ที่ไม่มี id (เช่น ข้อมูล Portfolio ทั้งก้อน) → เก็บแค่รายการล่าสุดต่อคีย์ ไม่ให้คิวพองทุกครั้งที่บันทึก */
-      const idx=q.findIndex(x=>x.type==='upsert' && String(x.key||'')===key && (x.id==null||x.id===''));
       if(idx>=0){q[idx]=item;replaced=true;}
     }else if(item.type==='delete_container' && key){
       const idx=q.findIndex(x=>x.type==='delete_container' && String(x.key||'')===key);
@@ -133,21 +129,6 @@
     write(QUEUE,remaining); updateBadge();
   }
   window.MFFDataSafety={version:'2.0',pending,softDelete,restore,restoreLast,exportQueue,clearQueue,removeFromQueue,updateBadge,queue,normalizeRecord};
-  function compactQueue(){
-    try{
-      const q=read(QUEUE,[]); if(!Array.isArray(q)||!q.length) return;
-      const seen=new Map(), out=[];
-      for(let i=q.length-1;i>=0;i--){                       /* ไล่จากใหม่ไปเก่า เก็บรายการล่าสุดของแต่ละคีย์ */
-        const x=q[i], key=String(x&&x.key||'');
-        if(!x||(key&&syncEngineOwned.test(key))) continue;   /* คีย์ที่ Smart Sync ดูแลเอง/แคชเครื่อง ไม่ต้องอยู่ในคิว */
-        const id=x.id!=null?String(x.id):'';
-        const sig=(x.type==='upsert_batch'||x.type==='delete_container'||(x.type==='upsert'&&!id))?(x.type+'|'+key):(key&&id?('rec|'+key+'|'+id):('q|'+x.qid));
-        if(seen.has(sig)) continue; seen.set(sig,1); out.unshift(x);
-      }
-      if(out.length!==q.length){ rawSet(QUEUE,JSON.stringify(out)); }
-    }catch(e){}
-  }
-  compactQueue();
   window.addEventListener('online',updateBadge); window.addEventListener('offline',updateBadge);
   setTimeout(updateBadge,0);
 })();

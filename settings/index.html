@@ -148,13 +148,7 @@
 .mff-auto-sync-row{cursor:pointer;touch-action:manipulation;}
 </style>
 <script src="../themes.js"></script>
-<style id="mff-no-flash">html{overscroll-behavior-y:contain;touch-action:manipulation}button,a,[role=button],.back{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}button,[role=button],.back,.hm-menu a{-webkit-user-select:none;user-select:none}</style><script src="../icon-system.js"></script><style id="mff-sync-stable">
-.mff-sync-progress[hidden]{display:block!important;visibility:hidden;min-height:58px}
-#statusSyncAll{min-height:3.4em}
-.mff-sync-dir-btn,.mff-sync-bar-btn{min-height:40px;padding:10px 12px;display:inline-flex;align-items:center;justify-content:center;touch-action:manipulation}
-.mff-sync-all-btn,.mff-toggle,.mff-auto-sync-row{touch-action:manipulation}
-#autoSyncRow{min-height:44px}
-</style></head>
+</head>
 <body>
 
 <div class="mff-app" style="padding-bottom:20px">
@@ -709,7 +703,7 @@ function setSyncAllBusy(busy){
 function updateSyncAllProgress(index,total,name){const pct=Math.round(index/total*100);document.getElementById('syncAllProgressTitle').textContent=name;document.getElementById('syncAllProgressCount').textContent=index+'/'+total;document.getElementById('syncAllProgressBar').style.width=pct+'%';}
 function renderSyncModuleRows(){
   const rows=SYNC_TARGETS.map(t=>{const v=localStorage.getItem(t.lastSyncKey);const dirty=isDirty(t);const chip=dirty?'<span class="mff-status-chip pending">🟠 รอซิงก์</span>':(v?'<span class="mff-status-chip ok">🟢 Synced</span>':'<span class="mff-status-chip neutral">⚪ ยังไม่เคยซิงก์</span>');return `<div class="mff-sync-module-row"><div class="mff-sync-module-name">${t.name}</div><div class="mff-module-sync-status">${chip}${v&&!dirty?`<div style="margin-top:3px">${esc(v)}</div>`:''}</div></div>`;}).join('')+`<div class="mff-sync-module-row"><div class="mff-sync-module-name">📊 My Portfolio</div><div class="mff-module-sync-status"><span class="mff-status-chip neutral">ดูจากโมดูล Portfolio</span></div></div>`;
-  {const _el=document.getElementById('syncModuleRows');if(_el.dataset.h!==rows){_el.dataset.h=rows;_el.innerHTML=rows;}}
+  document.getElementById('syncModuleRows').innerHTML=rows;
   updateSystemPulse();
 }
 async function runPortfolioSmartSync(){
@@ -766,7 +760,7 @@ async function runSmartSync(opts){
     // any unrelated module writing during the run would keep re-populating it and the
     // badge would look permanently "not synced" even on a fully successful sync.)
     if(!fail && preSyncQueueIds.length && window.MFFDataSafety?.removeFromQueue){
-      dropSyncedQueue(preSyncQueueIds);
+      window.MFFDataSafety.removeFromQueue(preSyncQueueIds);
     }
     if(!opts.silent) toast(conf?'ซิงก์เสร็จแล้ว มีข้อมูลชนกันให้ตรวจสอบ':'ซิงก์ทั้งหมดเรียบร้อย');
   }catch(e){statusEl.innerHTML='<span class="warn">⚠️ '+esc(e.message||e)+'</span>';if(opts.auto) throw e;}
@@ -794,7 +788,7 @@ async function runSyncAll(dir){
   try{const token=await ensureSheetsTokenForSyncAll(cid);if(!token)throw new Error('ขอสิทธิ์ Google Sheets ไม่สำเร็จ');
     const remoteBackup={};for(const t of SYNC_TARGETS){try{remoteBackup[t.key]=await readRemote(token,sid,t);}catch(e){remoteBackup[t.key]=null;}}
     createBackup('ก่อน Force Sync',remoteBackup);addSyncHistory('Backup','สร้าง Snapshot ก่อน Force Sync');
-    for(const t of SYNC_TARGETS){updateSyncAllProgress(done,total,(dir==='pull'?'⬇️ ':'⬆️ ')+t.name);const remote=await readRemote(token,sid,t);if(dir==='pull'){setLocal(t,remote);setBase(t,remote);}else{const local=getLocal(t);await safeWriteRemote(token,sid,t,local,remote);setBase(t,local);}done++;updateSyncAllProgress(done,total,t.name+' ✓');}updateSyncAllProgress(done,total,'📊 My Portfolio');await runPortfolioSyncInFrame(dir);done++;updateSyncAllProgress(done,total,'📊 My Portfolio ✓');statusEl.innerHTML='<span class="ok">✅ บังคับซิงก์เสร็จแล้ว</span>';if(preSyncQueueIds.length&&window.MFFDataSafety?.removeFromQueue)dropSyncedQueue(preSyncQueueIds);renderSyncModuleRows();renderModuleStatus();}
+    for(const t of SYNC_TARGETS){updateSyncAllProgress(done,total,(dir==='pull'?'⬇️ ':'⬆️ ')+t.name);const remote=await readRemote(token,sid,t);if(dir==='pull'){setLocal(t,remote);setBase(t,remote);}else{const local=getLocal(t);await safeWriteRemote(token,sid,t,local,remote);setBase(t,local);}done++;updateSyncAllProgress(done,total,t.name+' ✓');}updateSyncAllProgress(done,total,'📊 My Portfolio');await runPortfolioSyncInFrame(dir);done++;updateSyncAllProgress(done,total,'📊 My Portfolio ✓');statusEl.innerHTML='<span class="ok">✅ บังคับซิงก์เสร็จแล้ว</span>';if(preSyncQueueIds.length&&window.MFFDataSafety?.removeFromQueue)window.MFFDataSafety.removeFromQueue(preSyncQueueIds);renderSyncModuleRows();renderModuleStatus();}
   catch(e){statusEl.innerHTML='<span class="warn">⚠️ หยุดที่ '+done+'/'+SYNC_TARGETS.length+' — '+esc(e.message||e)+'</span>';}
   finally{setSyncAllBusy(false);}
 }
@@ -883,13 +877,6 @@ function autoRetryState(){try{return JSON.parse(localStorage.getItem(AUTO_RETRY_
 function saveAutoRetryState(v){try{localStorage.setItem(AUTO_RETRY_KEY,JSON.stringify(v))}catch(e){}}
 function autoSyncEnabled(){const v=localStorage.getItem(AUTO_SYNC_KEY);return v===null?true:v==='1';}
 function renderAutoSyncToggle(){const cb=document.getElementById('autoSyncToggle'),track=document.getElementById('autoSyncTrack'),row=document.getElementById('autoSyncRow');if(!cb||!track)return;const on=autoSyncEnabled();cb.classList.toggle('on',on);cb.setAttribute('aria-checked',String(on));track.setAttribute('aria-checked',String(on));if(row)row.setAttribute('aria-pressed',String(on));}
-function dropSyncedQueue(ids){
-  try{
-    const ds=window.MFFDataSafety; if(!ds||!ds.removeFromQueue)return;
-    const pf=(ds.exportQueue?.()||[]).filter(x=>x&&x.key==='khlangthun_portfolio_oldui_latest_v4').map(x=>x.qid); /* Portfolio ซิงก์ในรอบเดียวกันแล้ว */
-    ds.removeFromQueue((ids||[]).concat(pf));
-  }catch(e){}
-}
 function queueItems(){try{return window.MFFDataSafety?.exportQueue?.()||[]}catch(e){return[];}}
 function renderOfflineQueue(){
   const q=queueItems();
@@ -1201,7 +1188,6 @@ window.addEventListener('mff:data-safety',function(e){
 
 })();
 </script>
-
 
 </body>
 </html>

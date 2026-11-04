@@ -9,17 +9,14 @@ var LS='mff_supply_v1';
 
 /* ---------- ข้อมูลรายการ ---------- */
 var CATS=[
- {id:'water',name:'น้ำดื่ม',ic:'💧',tone:'#2E86C1'},
- {id:'food',name:'อาหารหลัก',ic:'🍚',tone:'#C98516'},
- {id:'snack',name:'ของกินเสริม',ic:'🥛',tone:'#B9770E'},
- {id:'power',name:'ไฟและพลังงาน',ic:'🔦',tone:'#D4AC0D'},
- {id:'med',name:'ยาและปฐมพยาบาล',ic:'💊',tone:'#CB4335'},
- {id:'hygiene',name:'สุขอนามัย',ic:'🧼',tone:'#17A589'},
- {id:'safety',name:'ป้องกันภัย',ic:'🦺',tone:'#E67E22'},
- {id:'cash',name:'เงินและเอกสาร',ic:'💵',tone:'#1F9D6C'},
- {id:'other',name:'อื่น ๆ',ic:'📦',tone:'#7F8C8D'}
+ {id:'water',name:'น้ำดื่ม'},
+ {id:'food',name:'อาหารสำรอง'},
+ {id:'power',name:'แสงสว่างและพลังงาน'},
+ {id:'med',name:'ยาและสุขอนามัย'},
+ {id:'safety',name:'อุปกรณ์ป้องกันภัย'},
+ {id:'cash',name:'เงินสดสำรอง'},
+ {id:'extra',name:'ทยอยจัดหาเพิ่มเติม'}
 ];
-var CATIDS={};CATS.forEach(function(c){CATIDS[c.id]=c});
 var BASE=[
  {id:'water1',cat:'water',name:'น้ำดื่มขวดใหญ่',unit:'ขวด',kind:'water',rate:0},
  {id:'rice',cat:'food',name:'ข้าวสาร',unit:'กก.',kind:'ppd',rate:0.2,step:1},
@@ -56,14 +53,8 @@ var BASE=[
  {id:'vest',cat:'extra',name:'เสื้อชูชีพและรองเท้าบูท',unit:'ชุด',kind:'pp',rate:1,note:'เหมาะกับพื้นที่เสี่ยงน้ำท่วม ข้ามได้ถ้าไม่เกี่ยวข้อง'},
  {id:'solar',cat:'extra',name:'แผงโซลาร์เซลล์พกพา',unit:'แผง',kind:'fix',rate:1,note:'เพิ่มทางเลือกสำรองพลังงาน'}
 ];
-/* จัดหมวดใหม่ให้กระชับ (ข้อมูลที่บันทึกไว้ผูกกับ id ของรายการ จึงไม่กระทบ) */
-var MOVE={milk:'snack',cracker:'snack',nuts:'snack',season:'snack',
- pbank:'power',radio:'power',fan:'power',solar:'power',stove:'power',
- soap:'hygiene',tooth:'hygiene',tp:'hygiene',wipe:'hygiene',gel:'hygiene',repel:'hygiene',
- whistle:'safety',ext:'safety',vest:'safety',zip:'cash'};
-BASE.forEach(function(it){if(MOVE[it.id])it.cat=MOVE[it.id]});
 var KIND={ppd:'ต่อคนต่อวัน',pp:'ต่อคน',fix:'รวมทั้งครอบครัว'};
-var STEPS=['นับจำนวนของแต่ละรายการ (เปิดทีละหมวดในภาพรวม)','ตรวจวันหมดอายุ','ทดลองไฟฉายและวิทยุ','ตรวจแบตเตอรี่พาวเวอร์แบงก์','ตรวจเอกสารและซองกันน้ำ','เติมหรือหมุนเวียนรายการที่ขาดหรือใกล้หมดอายุ'];
+var STEPS=['นับจำนวนของแต่ละรายการ (แท็บ "รายการ")','ตรวจวันหมดอายุ','ทดลองไฟฉายและวิทยุ','ตรวจแบตเตอรี่พาวเวอร์แบงก์','ตรวจเอกสารและซองกันน้ำ','เติมหรือหมุนเวียนรายการที่ขาดหรือใกล้หมดอายุ'];
 var CHECKS=[
  {g:'น้ำและอาหาร',l:['น้ำดื่มเพียงพอและเก็บในที่เหมาะสม','อาหารไม่หมดอายุ บรรจุภัณฑ์ไม่บวมรั่ว','มีอาหารที่กินได้โดยไม่ต้องใช้ไฟฟ้า','มีแผนน้ำสำหรับสุขอนามัยแยกจากน้ำดื่ม']},
  {g:'ไฟฟ้าและการสื่อสาร',l:['ไฟฉายใช้งานได้','ถ่านสำรองตรงกับอุปกรณ์','โทรศัพท์และพาวเวอร์แบงก์ชาร์จพร้อม','มีสายชาร์จและวิทยุใช้งานได้']},
@@ -77,7 +68,7 @@ var CAUTIONS=[
  'เก็บยาให้พ้นมือเด็ก ตรวจวันหมดอายุ และใช้ยาตามฉลากหรือคำแนะนำบุคลากรทางการแพทย์',
  'หากมีเด็ก ผู้สูงอายุ ผู้ป่วย หรือสัตว์เลี้ยง ให้เพิ่มอาหาร ยา และของใช้เฉพาะตามความต้องการ'
 ];
-var TABS=[['overview','ภาพรวม','◫'],['buy','สรุปที่ขาด','＋'],['check','ตรวจสต๊อก','✓'],['more','ตั้งค่า','⚙']];
+var TABS=[['overview','ภาพรวม'],['items','รายการ'],['buy','ต้องซื้อ'],['check','ตรวจสต๊อก']];
 
 /* ---------- ตัวช่วย ---------- */
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -101,14 +92,14 @@ function normalize(d){
 }
 var state=defaults();
 try{var raw=localStorage.getItem(LS);if(raw)state=normalize(JSON.parse(raw))}catch(e){}
-var ui={tab:'overview',cat:'',filter:'all',open:{},addCat:'',copyText:'',flash:'',scrollTo:'',backup:''};
+var ui={tab:'overview',filter:'all',open:{},addCat:'',copyText:'',flash:'',scrollTo:'',backup:''};
 function touch(){try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){} try{window.MFFToolsSync&&MFFToolsSync.push(LS,state)}catch(e){}}
 
 /* ---------- คำนวณ ---------- */
 function items(){
   return BASE.concat(state.custom).map(function(it){
     var o=state.items[it.id]||{};
-    return Object.assign({},it,{cat:CATIDS[it.cat]?it.cat:'other',kind:o.kind||it.kind,rate:o.rate!=null?o.rate:it.rate,have:o.have||0,price:o.price||0,expiry:o.expiry||'',note2:o.note||'',skip:!!o.skip,custom:!!it.custom});
+    return Object.assign({},it,{kind:o.kind||it.kind,rate:o.rate!=null?o.rate:it.rate,have:o.have||0,price:o.price||0,expiry:o.expiry||'',note2:o.note||'',skip:!!o.skip,custom:!!it.custom});
   });
 }
 function getView(id){return items().filter(function(v){return v.id===id})[0]}
@@ -135,7 +126,7 @@ function stats(){
     var r=Math.min(1,v.have/t),sh=r2(Math.max(0,t-v.have));
     c.n++;c.sum+=r;n++;sum+=r;
     if(sh===0){c.ok++;ok++}else{var rec={v:v,t:t,sh:sh};c.short.push(rec);short.push(rec)}
-    if(v.id!=='cash'){
+    if(v.cat!=='cash'){
       c.buy+=sh*v.price;c.full+=t*v.price;buy+=sh*v.price;full+=t*v.price;
       if(v.price>0)anyPrice=true;
     }
@@ -146,7 +137,7 @@ function stats(){
 function coverage(){
   var s=state.settings,w=getView('water1'),water=null,food=null;
   if(w&&!w.skip&&s.people*s.waterL>0)water=w.have*s.bottleL/(s.people*s.waterL);
-  var list=items().filter(function(v){return (v.cat==='food'||v.cat==='snack')&&!v.skip&&v.kind==='ppd'&&v.rate>0});
+  var list=items().filter(function(v){return v.cat==='food'&&!v.skip&&v.kind==='ppd'&&v.rate>0});
   if(list.length){
     var sum=0;list.forEach(function(v){sum+=Math.min(v.have/(v.rate*s.people),s.days*2)});
     food=sum/list.length;
@@ -199,46 +190,34 @@ function hero(st,cv){
     var has=val!=null,p=has?val/s.days*100:0,done=has&&val>=s.days;
     return '<div class="sp-rrow"><div class="sp-rtop"><span>'+label+'</span><b>'+(has?days1(val)+' จาก '+s.days+' วัน':'ไม่ได้นับ')+'</b></div>'+bar(p,done?'ok':'')+'</div>';
   }
-  var ex=expiring(),nd=nextDue();
-  return '<section class="sp-hero"><div class="sp-hero-top"><div><div class="sp-kick">ระดับความพร้อมของคลัง</div><div class="sp-pct">'+st.pct+'<small>%</small></div></div>'+
-    '<div class="sp-hero-sub"><b>'+st.ok+'</b> / '+st.n+' รายการพร้อมใช้</div></div>'+
-    '<div class="sp-ruler"><div class="sp-kick">ระยะเวลาสำรองโดยประมาณ</div>'+row('น้ำดื่ม',cv.water)+row('อาหารหลัก',cv.food)+'</div>'+
-    '<div class="sp-kpis"><div><span>รายการที่ยังขาด</span><b>'+st.short.length+'</b></div><div><span>ใกล้หมดอายุ</span><b>'+ex.length+'</b></div><div><span>ตรวจครั้งถัดไป</span><b>'+fmtD(nd.due)+'</b></div></div></section>';
+  return '<section class="sp-hero"><div class="sp-hero-top"><div><div class="sp-kick">ความพร้อมของคลัง</div><div class="sp-pct">'+st.pct+'<small>%</small></div></div>'+
+    '<div class="sp-hero-sub">ครบ '+st.ok+' จาก '+st.n+' รายการ</div></div>'+
+    '<div class="sp-ruler"><div class="sp-kick">ของที่มีอยู่ตอนนี้พอใช้ได้</div>'+row('น้ำดื่ม',cv.water)+row('อาหารหลัก',cv.food)+'</div></section>';
 }
 function todoCard(st,nd,ex){
   var rows='',exp=ex.filter(function(e){return e.days<=0}).length;
-  if(st.short.length)rows+='<button class="sp-todo" data-act="tab" data-t="buy"><span><b>ยังขาด '+st.short.length+' รายการ</b><small>ดูสรุปสิ่งที่ต้องซื้อและคัดลอกไปใช้ได้</small></span><i>›</i></button>';
+  if(st.short.length)rows+='<button class="sp-todo" data-act="tab" data-t="buy"><span><b>ยังขาด '+st.short.length+' รายการ</b><small>ดูรายการที่ต้องซื้อและคัดลอกไปใช้ได้</small></span><i>›</i></button>';
   if(nd.left<=14)rows+='<button class="sp-todo" data-act="tab" data-t="check"><span><b>'+esc(nd.txt)+'</b><small>กำหนดตรวจ '+fmtD(nd.due)+'</small></span><i>›</i></button>';
-  if(ex.length)rows+='<button class="sp-todo" data-act="tab" data-t="buy"><span><b>'+(exp?'หมดอายุแล้ว '+exp+' รายการ':'ใกล้หมดอายุ '+ex.length+' รายการ')+'</b><small>ตรวจและหมุนเวียนของก่อนใช้ไม่ได้</small></span><i>›</i></button>';
+  if(ex.length)rows+='<button class="sp-todo" data-act="scroll" data-to="sp-exp"><span><b>'+(exp?'หมดอายุแล้ว '+exp+' รายการ':'ใกล้หมดอายุ '+ex.length+' รายการ')+'</b><small>ตรวจและหมุนเวียนของก่อนใช้ไม่ได้</small></span><i>›</i></button>';
   if(!rows)rows='<div class="sp-note good">คลังพร้อมแล้ว ตอนนี้ไม่มีอะไรต้องทำ</div>';
   return '<section class="sp-card"><h3>ควรทำต่อ</h3><div class="sp-todos">'+rows+'</div></section>';
 }
-function ringSvg(p,col){
-  var r=27,c=2*Math.PI*r;
-  return '<svg class="sp-ring" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="'+r+'" fill="none" stroke="currentColor" stroke-opacity=".14" stroke-width="5"/>'+
-    '<circle cx="32" cy="32" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="5" stroke-linecap="round" stroke-dasharray="'+(c*p/100).toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 32 32)"/></svg>';
-}
-function catPct(b){return b.n?Math.round(b.sum/b.n*100):0}
-function catColor(b){var p=catPct(b);return !b.n?'var(--muted)':(p>=100?'var(--sp-ok)':(p>0?'var(--sp-warn)':'var(--sp-bad)'))}
-function tint(c){return 'background:color-mix(in srgb,'+c.tone+' 18%,var(--surface))'}
-function tile(c,b){
-  var p=catPct(b),badge=b.short.length?'<span class="sp-badge" aria-label="ขาด '+b.short.length+' รายการ">'+b.short.length+'</span>':'';
-  var sub=b.n?(p>=100?'ครบแล้ว':'ครบ '+b.ok+'/'+b.n):(c.id==='other'?'แตะเพื่อเพิ่ม':'ยังไม่มีรายการ');
-  return '<button class="sp-tile" data-act="gocat" data-c="'+c.id+'">'+badge+
-    '<span class="sp-tic">'+ringSvg(p,catColor(b))+'<span class="em" style="'+tint(c)+'">'+c.ic+'</span></span>'+
-    '<b>'+esc(c.name)+'</b><small>'+sub+'</small></button>';
-}
-function gridCard(st){
-  return '<section class="sp-card"><h3>หมวดหมู่</h3><p class="sp-muted">แตะหมวดเพื่อดูและนับของเฉพาะหมวดนั้น · วงแหวนคือความพร้อม ตัวเลขแดงคือจำนวนที่ยังขาด</p><div class="sp-grid3">'+
-    CATS.map(function(c){return tile(c,st.by[c.id])}).join('')+'</div></section>';
+function catCard(st){
+  var h='<section class="sp-card"><h3>แยกตามหมวด</h3>';
+  CATS.forEach(function(c){
+    var b=st.by[c.id];if(!b.n)return;
+    var p=Math.round(b.sum/b.n*100);
+    h+='<button class="sp-catrow" data-act="gocat" data-c="'+c.id+'"><b>'+esc(c.name)+'</b><span class="n">ครบ '+b.ok+'/'+b.n+' · '+p+'%</span>'+bar(p,p>=100?'ok':'')+'</button>';
+  });
+  return h+'</section>';
 }
 function budgetCard(st){
   var h='<section class="sp-card"><h3>งบประมาณ</h3>';
   if(!st.anyPrice){
-    return h+'<p class="sp-muted">ใส่ราคาต่อหน่วยในแต่ละรายการ (เปิดหมวดแล้วกด "รายละเอียด") จะเห็นงบที่ต้องซื้อเพิ่มและงบเต็มแผนตรงนี้</p></section>';
+    return h+'<p class="sp-muted">ใส่ราคาต่อหน่วยในแต่ละรายการ (แท็บ "รายการ" แล้วกด "รายละเอียด") จะเห็นงบที่ต้องซื้อเพิ่มและงบเต็มแผนตรงนี้</p></section>';
   }
   h+='<div class="sp-tbl"><table><thead><tr><th>หมวด</th><th>ต้องซื้อเพิ่ม</th><th>เต็มแผน</th></tr></thead><tbody>';
-  CATS.forEach(function(c){var b=st.by[c.id];if(!b.n)return;h+='<tr><td>'+esc(c.name)+'</td><td>'+money(b.buy)+'</td><td>'+money(b.full)+'</td></tr>'});
+  CATS.forEach(function(c){if(c.id==='cash')return;var b=st.by[c.id];if(!b.n)return;h+='<tr><td>'+esc(c.name)+'</td><td>'+money(b.buy)+'</td><td>'+money(b.full)+'</td></tr>'});
   return h+'</tbody><tfoot><tr><td>รวม</td><td>'+money(st.buy)+'</td><td>'+money(st.full)+'</td></tr></tfoot></table></div><p class="sp-muted">ราคาเป็นประมาณการเพื่อวางแผน ไม่รวมเงินสดสำรอง ควรตรวจราคาจริงก่อนซื้อ</p></section>';
 }
 function expCard(ex){
@@ -271,13 +250,11 @@ function backupCard(){
 }
 
 function vOverview(){
-  if(ui.cat)return vCat();
   var st=stats(),nd=nextDue(),ex=expiring(),cv=coverage(),h='';
   if(!state.configured)h+=setupCard();
-  h+=hero(st,cv)+gridCard(st)+todoCard(st,nd,ex);
+  h+=hero(st,cv)+todoCard(st,nd,ex)+catCard(st)+budgetCard(st)+expCard(ex)+settingsCard()+cautionCard()+backupCard();
   return h;
 }
-function vMore(){return settingsCard()+cautionCard()+backupCard()}
 
 function itemHtml(v){
   var t=target(v),st=status(v),sh=r2(Math.max(0,t-v.have)),step=v.step||1,open=!!ui.open[v.id],s=state.settings,rule;
@@ -305,7 +282,7 @@ function itemHtml(v){
         Object.keys(KIND).map(function(k){return '<option value="'+k+'"'+(k===v.kind?' selected':'')+'>'+KIND[k]+'</option>'}).join('')+'</select></label>'+
         '<label class="sp-f">ปริมาณ ('+esc(v.unit)+')'+numField('rate-'+id,'data-f="rate" data-id="'+id+'"',v.rate)+'</label>';
     }
-    if(v.id!=='cash')h+='<label class="sp-f">ราคาต่อ'+esc(v.unit)+' (บาท)'+numField('price-'+id,'data-f="price" data-id="'+id+'"',v.price||'')+'</label>';
+    if(v.cat!=='cash')h+='<label class="sp-f">ราคาต่อ'+esc(v.unit)+' (บาท)'+numField('price-'+id,'data-f="price" data-id="'+id+'"',v.price||'')+'</label>';
     h+='<label class="sp-f">วันหมดอายุที่ใกล้ที่สุด<input type="date" data-fk="exp-'+id+'" data-f="expiry" data-id="'+id+'" value="'+esc(v.expiry)+'"></label>'+
       '<label class="sp-f wide">บันทึกเพิ่มเติม<input type="text" data-fk="note-'+id+'" data-f="note" data-id="'+id+'" value="'+esc(v.note2)+'" placeholder="เช่น ยี่ห้อ ที่เก็บ"></label>'+
       '<label class="sp-f chk wide"><input type="checkbox" data-fk="skip-'+id+'" data-f="skip" data-id="'+id+'"'+(v.skip?' checked':'')+'> ข้ามรายการนี้ (ไม่นับในแผน)</label>';
@@ -314,27 +291,35 @@ function itemHtml(v){
   }
   return h+'</article>';
 }
-function vCat(){
-  var c=CATIDS[ui.cat];if(!c){ui.cat='';return vOverview()}
-  var st=stats(),b=st.by[c.id],p=catPct(b),all=items().filter(function(v){return v.cat===c.id}),h='',cnt={all:all.length,need:0,ok:0};
-  all.forEach(function(v){var x=status(v);if(x==='ok')cnt.ok++;else if(x!=='skip')cnt.need++});
-  h+='<button class="sp-back" data-act="catback" type="button">‹ ภาพรวม</button>';
-  h+='<section class="sp-cathero"><span class="em" style="'+tint(c)+'">'+c.ic+'</span><div class="tx"><h3>'+esc(c.name)+'</h3>'+
-    '<div class="sp-muted">'+(b.n?'ครบ '+b.ok+' จาก '+b.n+' รายการ · '+p+'%':'ยังไม่มีรายการที่นับในหมวดนี้')+'</div>'+bar(p,p>=100?'ok':'')+'</div></section>';
-  if(b.short.length)h+='<div class="sp-actions"><button class="sp-btn sec sm" data-act="boughtcat" data-c="'+c.id+'">เติมให้ครบทั้งหมวด</button></div>';
-  if(all.length>1)h+='<div class="sp-seg" role="group" aria-label="กรองรายการ">'+
+function vItems(){
+  var all=items(),h='',cnt={all:0,need:0,ok:0};
+  all.forEach(function(v){cnt.all++;var s=status(v);if(s==='ok')cnt.ok++;else if(s!=='skip')cnt.need++});
+  h+='<div class="sp-seg" role="group" aria-label="กรองรายการ">'+
     [['all','ทั้งหมด '+cnt.all],['need','ขาด '+cnt.need],['ok','ครบ '+cnt.ok]].map(function(f){return '<button data-act="filter" data-f2="'+f[0]+'" aria-pressed="'+(ui.filter===f[0])+'">'+f[1]+'</button>'}).join('')+'</div>';
-  var list=all.filter(function(v){var x=status(v);if(ui.filter==='need')return x==='low'||x==='none';if(ui.filter==='ok')return x==='ok';return true});
-  if(!list.length)h+='<div class="sp-empty">'+(ui.filter==='all'?'ยังไม่มีรายการ เพิ่มรายการแรกได้ด้านล่าง':'ไม่มีรายการในตัวกรองนี้')+'</div>';
-  list.forEach(function(v){h+=itemHtml(v)});
-  if(ui.addCat===c.id){
-    h+='<div class="sp-card"><h3>เพิ่มรายการในหมวด "'+esc(c.name)+'"</h3><div class="sp-grid">'+
-      '<label class="sp-f">ชื่อรายการ<input type="text" data-fk="new-name" placeholder="เช่น แพมเพิร์ส อาหารสัตว์เลี้ยง"></label>'+
-      '<label class="sp-f">หน่วย<input type="text" data-fk="new-unit" placeholder="เช่น ห่อ ถุง"></label>'+
-      '<label class="sp-f">วิธีคิดปริมาณ<select data-fk="new-kind">'+Object.keys(KIND).map(function(k){return '<option value="'+k+'">'+KIND[k]+'</option>'}).join('')+'</select></label>'+
-      '<label class="sp-f">ปริมาณ<input type="number" inputmode="decimal" min="0" step="any" data-fk="new-rate" value="1"></label></div>'+
-      '<div class="sp-actions"><button class="sp-btn" data-act="addcustom" data-c="'+c.id+'">เพิ่มรายการ</button><button class="sp-btn sec" data-act="addcancel">ยกเลิก</button></div></div>';
-  }else h+='<div><button class="sp-link" data-act="addopen" data-c="'+c.id+'">+ เพิ่มรายการในหมวดนี้</button></div>';
+  h+='<div class="sp-jump" aria-label="ไปยังหมวด">'+CATS.map(function(c){return '<button data-act="scroll" data-to="sp-cat-'+c.id+'">'+esc(c.name)+'</button>'}).join('')+'</div>';
+  CATS.forEach(function(c){
+    var list=all.filter(function(v){
+      if(v.cat!==c.id)return false;var s=status(v);
+      if(ui.filter==='need')return s==='low'||s==='none';
+      if(ui.filter==='ok')return s==='ok';
+      return true;
+    });
+    var tot=all.filter(function(v){return v.cat===c.id&&!v.skip&&target(v)>0});
+    var okn=tot.filter(function(v){return v.have>=target(v)}).length;
+    h+='<div class="sp-cathead" id="sp-cat-'+c.id+'"><h3>'+esc(c.name)+'</h3><span class="n">ครบ '+okn+'/'+tot.length+'</span></div>';
+    if(!list.length)h+='<div class="sp-empty">'+(ui.filter==='all'?'ยังไม่มีรายการ':'ไม่มีรายการในตัวกรองนี้')+'</div>';
+    list.forEach(function(v){h+=itemHtml(v)});
+    if(ui.addCat===c.id){
+      h+='<div class="sp-card"><h3>เพิ่มรายการในหมวด "'+esc(c.name)+'"</h3><div class="sp-grid">'+
+        '<label class="sp-f">ชื่อรายการ<input type="text" data-fk="new-name" placeholder="เช่น แพมเพิร์ส อาหารสัตว์เลี้ยง"></label>'+
+        '<label class="sp-f">หน่วย<input type="text" data-fk="new-unit" placeholder="เช่น ห่อ ถุง"></label>'+
+        '<label class="sp-f">วิธีคิดปริมาณ<select data-fk="new-kind">'+Object.keys(KIND).map(function(k){return '<option value="'+k+'">'+KIND[k]+'</option>'}).join('')+'</select></label>'+
+        '<label class="sp-f">ปริมาณ<input type="number" inputmode="decimal" min="0" step="any" data-fk="new-rate" value="1"></label></div>'+
+        '<div class="sp-actions"><button class="sp-btn" data-act="addcustom" data-c="'+c.id+'">เพิ่มรายการ</button><button class="sp-btn sec" data-act="addcancel">ยกเลิก</button></div></div>';
+    }else{
+      h+='<div><button class="sp-link" data-act="addopen" data-c="'+c.id+'">+ เพิ่มรายการในหมวดนี้</button></div>';
+    }
+  });
   return h;
 }
 
@@ -348,29 +333,22 @@ function buyText(st){
   return lines.join('\n');
 }
 function vBuy(){
-  var st=stats(),ex=expiring(),h='';
-  var pctS=st.n?st.pct:0;
-  h+='<section class="sp-card"><h3>สรุปสิ่งที่ต้องเพิ่มเติม</h3>';
-  if(!st.short.length)h+='<div class="sp-note good">ไม่มีรายการที่ขาดในตอนนี้ คลังพร้อม '+pctS+'%</div>';
-  else{
-    h+='<p class="sp-muted">ขาด '+st.short.length+' รายการ จาก '+st.n+' รายการ'+(st.anyPrice?' · ประมาณ '+money(st.buy):'')+'</p>'+
-      '<div class="sp-sumchips">'+CATS.map(function(c){var b=st.by[c.id];return b.short.length?'<button class="sp-sc" data-act="gocat" data-c="'+c.id+'"><span>'+c.ic+'</span><b>'+b.short.length+'</b></button>':''}).join('')+'</div>'+
-      '<div class="sp-actions"><button class="sp-btn sm" data-act="copy">คัดลอกรายการ</button>'+(navigator.share?'<button class="sp-btn sec sm" data-act="share">ส่งต่อ</button>':'')+'</div>'+
-      (ui.copyText?'<pre class="sp-copy" data-fk="copybox">'+esc(ui.copyText)+'</pre>':'')+flashHtml();
-  }
-  h+='</section>';
+  var st=stats(),h='';
+  if(!st.short.length)return '<section class="sp-card"><h3>รายการที่ต้องซื้อ</h3><div class="sp-note good">ไม่มีรายการที่ขาดในตอนนี้</div></section>';
+  h+='<section class="sp-card"><h3>รายการที่ต้องซื้อ</h3><p class="sp-muted">ขาด '+st.short.length+' รายการ'+(st.anyPrice?' · ประมาณ '+money(st.buy):'')+'</p>'+
+    '<div class="sp-actions"><button class="sp-btn sm" data-act="copy">คัดลอกรายการ</button>'+(navigator.share?'<button class="sp-btn sec sm" data-act="share">ส่งต่อ</button>':'')+'</div>'+
+    (ui.copyText?'<pre class="sp-copy" data-fk="copybox">'+esc(ui.copyText)+'</pre>':'')+flashHtml()+'</section>';
   CATS.forEach(function(c){
     var b=st.by[c.id];if(!b.short.length)return;
-    h+='<section class="sp-card"><div class="sp-sechead"><span class="em" style="'+tint(c)+'">'+c.ic+'</span><h3>'+esc(c.name)+'</h3><span class="sp-chip low">ขาด '+b.short.length+'</span></div>';
+    h+='<section class="sp-card"><h3>'+esc(c.name)+'</h3>';
     b.short.forEach(function(r){
       var v=r.v;
-      h+='<div class="sp-buyrow"><div class="nm">'+esc(v.name)+'<small>มี '+qty(v.have)+' จาก '+qty(r.t)+' '+esc(v.unit)+(v.price&&v.id!=='cash'?' · ราว '+money(r.sh*v.price):'')+'</small></div>'+
+      h+='<div class="sp-buyrow"><div class="nm">'+esc(v.name)+'<small>มี '+qty(v.have)+' จาก '+qty(r.t)+' '+esc(v.unit)+(v.price&&v.cat!=='cash'?' · ราว '+money(r.sh*v.price):'')+'</small></div>'+
         '<span class="qty">'+qty(r.sh)+' '+esc(v.unit)+'</span>'+
         '<button class="sp-btn sec sm" data-act="bought" data-id="'+esc(v.id)+'">ซื้อแล้ว</button></div>';
     });
     h+='</section>';
   });
-  h+=expCard(ex)+budgetCard(st);
   return h;
 }
 
@@ -382,7 +360,7 @@ function vCheck(){
     '<p class="sp-muted">ทำตามขั้นตอนด้านล่าง แล้วกด "บันทึกการตรวจ" ระบบจะเก็บสรุปสิ่งที่ขาดไว้ และเลื่อนกำหนดครั้งถัดไปให้อัตโนมัติ</p></section>';
   h+='<section class="sp-card"><h3>ขั้นตอนตรวจ</h3><p class="sp-muted">ทำแล้ว '+stepDone+'/'+STEPS.length+'</p>';
   STEPS.forEach(function(t,i){h+='<div class="sp-ck'+(state.steps[i]?' done':'')+'"><input type="checkbox" id="sp-stp-'+i+'" data-fk="stp-'+i+'" data-cl="steps" data-k="'+i+'"'+(state.steps[i]?' checked':'')+'><label for="sp-stp-'+i+'">'+esc(t)+'</label></div>'});
-  h+='<div class="sp-actions"><button class="sp-btn sec sm" data-act="tab" data-t="overview">ไปนับของในภาพรวม</button></div></section>';
+  h+='<div class="sp-actions"><button class="sp-btn sec sm" data-act="tab" data-t="items">ไปนับของในแท็บรายการ</button></div></section>';
   h+='<section class="sp-card"><h3>เช็กลิสต์ตรวจสอบ</h3><p class="sp-muted">ผ่านแล้ว '+clDone+'/'+clTotal+'</p>';
   CHECKS.forEach(function(g,gi){
     h+='<h4>'+esc(g.g)+'</h4>';
@@ -390,7 +368,7 @@ function vCheck(){
   });
   h+='</section>';
   h+='<section class="sp-card"><h3>สถานะตอนนี้</h3><p class="sp-muted">ครบ '+st.ok+' จาก '+st.n+' รายการ ('+st.pct+'%) · ขาด '+st.short.length+' · ใกล้หมดอายุ/หมดอายุแล้ว '+ex.length+'</p>'+bar(st.pct,st.pct>=100?'ok':'')+
-    '<div class="sp-actions"><button class="sp-btn sec sm" data-act="tab" data-t="buy">ดูสรุปที่ขาด</button></div></section>';
+    '<div class="sp-actions"><button class="sp-btn sec sm" data-act="tab" data-t="buy">ดูรายการที่ขาด</button></div></section>';
   h+='<section class="sp-card"><h3>บันทึกการตรวจ</h3><div class="sp-grid">'+
     '<label class="sp-f">วันที่ตรวจ<input type="date" data-fk="chk-date" value="'+todayStr()+'"></label>'+
     '<label class="sp-f">ผู้ตรวจ<input type="text" data-fk="chk-by" placeholder="ชื่อผู้ตรวจ"></label></div>'+
@@ -407,16 +385,16 @@ function vCheck(){
   return h+'</section>';
 }
 
-var VIEWS={overview:vOverview,buy:vBuy,check:vCheck,more:vMore};
+var VIEWS={overview:vOverview,items:vItems,buy:vBuy,check:vCheck};
 
 function render(){
   var a=document.activeElement,fk=a&&root.contains(a)?a.getAttribute('data-fk'):null,ss=null,se=null;
   try{ss=a.selectionStart;se=a.selectionEnd}catch(e){}
   var y=window.scrollY,s=state.settings,st=stats();
-  var head='<header class="sp-pagehead"><div class="sp-brandmark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8.5 12 4l8 4.5v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 9h16M8 9v4h8V9M12 13v4"/></svg></div><div class="sp-pagecopy"><span class="sp-eyebrow">EMERGENCY READINESS</span><h2>คลังเสบียงฉุกเฉิน</h2><p>ครอบครัว '+s.people+' คน <i>·</i> '+s.days+' วัน <i>·</i> ตรวจทุก '+s.months+' เดือน</p></div><span class="sp-live"><i></i> พร้อมจัดการ</span></header>';
+  var head='<div class="panelhead"><div><h2>คลังเสบียงฉุกเฉิน</h2><p>ครอบครัว '+s.people+' คน · เตรียมไว้ '+s.days+' วัน · ตรวจทุก '+s.months+' เดือน</p></div><span class="pill">Supplies</span></div>';
   var tabs='<nav class="sp-tabs" aria-label="เมนูคลังเสบียง">'+TABS.map(function(t){
     var dot=t[0]==='buy'&&st.short.length?'<span class="dot">'+st.short.length+'</span>':'';
-    return '<button data-act="tab" data-t="'+t[0]+'" aria-current="'+(ui.tab===t[0])+'"><span class="sp-tabico" aria-hidden="true">'+t[2]+'</span><span>'+t[1]+'</span>'+dot+'</button>';
+    return '<button data-act="tab" data-t="'+t[0]+'" aria-current="'+(ui.tab===t[0])+'">'+t[1]+dot+'</button>';
   }).join('')+'</nav>';
   root.innerHTML=head+tabs+'<div class="sp-view">'+VIEWS[ui.tab]()+'</div>';
   if(fk){var n=root.querySelector('[data-fk="'+fk+'"]');if(n){n.focus({preventScroll:true});try{if(ss!=null)n.setSelectionRange(ss,se)}catch(e){}}}
@@ -424,11 +402,12 @@ function render(){
   else window.scrollTo(0,y);
 }
 function later(){setTimeout(render,0)}
-function toTop(){var p=document.getElementById('supply');window.scrollTo(0,p?Math.max(0,p.getBoundingClientRect().top+window.scrollY-8):0)}
 function setTab(t){
   if(!VIEWS[t])t='overview';
-  ui.tab=t;ui.cat='';ui.addCat='';ui.flash='';ui.copyText='';
-  render();toTop();
+  ui.tab=t;ui.flash='';ui.copyText='';
+  render();
+  var p=document.getElementById('supply');
+  window.scrollTo(0,p?Math.max(0,p.getBoundingClientRect().top+window.scrollY-8):0);
 }
 function setItem(id,k,val){var o=state.items[id]=state.items[id]||{};o[k]=val;touch()}
 function val(sel){var e=root.querySelector('[data-fk="'+sel+'"]');return e?e.value:''}
@@ -444,12 +423,10 @@ root.addEventListener('click',function(e){
   var b=e.target.closest('[data-act]');if(!b||!root.contains(b))return;
   var a=b.dataset.act,id=b.dataset.id;
   if(a==='tab')setTab(b.dataset.t);
-  else if(a==='start'){state.configured=true;touch();ui.tab='overview';ui.cat='';render();toTop()}
+  else if(a==='start'){state.configured=true;touch();ui.tab='items';render();window.scrollTo(0,0)}
   else if(a==='sstep'){var k=b.dataset.s;state.settings[k]=clampSetting(k,state.settings[k]+(+b.dataset.d));state.configured=state.configured;touch();render()}
   else if(a==='scroll'){var tgt=document.getElementById(b.dataset.to);if(tgt)tgt.scrollIntoView({block:'start',behavior:'smooth'})}
-  else if(a==='gocat'){ui.tab='overview';ui.cat=b.dataset.c;ui.filter='all';ui.addCat='';ui.flash='';render();toTop()}
-  else if(a==='catback'){ui.cat='';ui.addCat='';render();toTop()}
-  else if(a==='boughtcat'){if(!confirm('ตั้งจำนวนที่มีให้ครบตามที่ควรมีทุกรายการในหมวดนี้?'))return;items().filter(function(v){return v.cat===b.dataset.c&&!v.skip}).forEach(function(v){setItem(v.id,'have',Math.max(v.have,target(v)))});render()}
+  else if(a==='gocat'){ui.tab='items';ui.filter='all';ui.scrollTo='sp-cat-'+b.dataset.c;render()}
   else if(a==='filter'){ui.filter=b.dataset.f2;render()}
   else if(a==='toggle'){ui.open[id]=!ui.open[id];render()}
   else if(a==='step'){var v=getView(id);setItem(id,'have',r2(Math.max(0,v.have+(+b.dataset.d)*(v.step||1))));render()}
@@ -522,6 +499,6 @@ root.addEventListener('focusin',function(e){
 
 /* เปิดแท็บใหม่ทุกครั้งที่กดเมนูนี้ เพื่อให้วันที่/กำหนดตรวจเป็นปัจจุบัน */
 var entry=document.querySelector('[data-tab="supply"]');
-if(entry)entry.addEventListener('click',function(){ui.tab='overview';ui.cat='';ui.addCat='';ui.flash='';render()});
+if(entry)entry.addEventListener('click',function(){ui.tab='overview';ui.flash='';render()});
 render();
 })();
