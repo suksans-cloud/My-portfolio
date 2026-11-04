@@ -9,17 +9,20 @@
     var r=all().filter(function(x){return x.id===id})[0]; if(!r) return fallback;
     try{ return JSON.parse(r.value); }catch(e){ return fallback; }
   }
-  function core(v){ try{ var o=JSON.parse(JSON.stringify(v)); if(o&&typeof o==='object'&&!Array.isArray(o)) delete o.savedAt; return JSON.stringify(o); }catch(e){ return null; } }
   function set(id,val){
-    var cur=all().filter(function(x){return x.id===id})[0];
-    if(cur){ try{ var a=core(JSON.parse(cur.value)), b=core(val); if(a!==null&&a===b) return; }catch(e){} } /* ค่าเดิมไม่เปลี่ยน → ไม่ติดสถานะรอซิงก์ */
     var l=all().filter(function(x){return x.id!==id});
     l.push({id:id,value:JSON.stringify(val),updatedAt:new Date().toISOString()});
     put(l); try{ localStorage.setItem(DIRTY,'1'); }catch(e){}
   }
   /* ค่าที่ซิงก์มา → คีย์เดิมที่หน้าอื่นอ่านอยู่ (Home / รายจ่ายรายวัน) ; ครั้งแรกให้ย้ายงบเดิมในเครื่องเข้ามา */
   function hydrate(){
-    /* งบรายวัน (budget) ถูกเอาออกจากแอปแล้ว — ไม่สร้าง/แก้ record 'budget' อีก เพื่อไม่ให้เกิดข้อมูลชนกันตอนซิงก์ */
+    try{
+      var b=all().filter(function(x){return x.id==='budget'})[0];
+      if(b){ localStorage.setItem(LEGACY_BUDGET,b.value); return; }
+      var raw=localStorage.getItem(LEGACY_BUDGET); if(!raw) return;
+      var o=JSON.parse(raw);
+      if(o&&(Number(o.total)>0||Object.keys(o.cats||{}).length)) set('budget',o);
+    }catch(e){}
   }
   window.MFFSettings={get:get,set:set,hydrate:hydrate};
 })();
