@@ -77,7 +77,7 @@ var CAUTIONS=[
  'เก็บยาให้พ้นมือเด็ก ตรวจวันหมดอายุ และใช้ยาตามฉลากหรือคำแนะนำบุคลากรทางการแพทย์',
  'หากมีเด็ก ผู้สูงอายุ ผู้ป่วย หรือสัตว์เลี้ยง ให้เพิ่มอาหาร ยา และของใช้เฉพาะตามความต้องการ'
 ];
-var TABS=[['overview','ภาพรวม'],['buy','สรุปที่ขาด'],['check','ตรวจสต๊อก'],['more','ตั้งค่า']];
+var TABS=[['overview','ภาพรวม','◫'],['buy','สรุปที่ขาด','＋'],['check','ตรวจสต๊อก','✓'],['more','ตั้งค่า','⚙']];
 
 /* ---------- ตัวช่วย ---------- */
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -199,9 +199,11 @@ function hero(st,cv){
     var has=val!=null,p=has?val/s.days*100:0,done=has&&val>=s.days;
     return '<div class="sp-rrow"><div class="sp-rtop"><span>'+label+'</span><b>'+(has?days1(val)+' จาก '+s.days+' วัน':'ไม่ได้นับ')+'</b></div>'+bar(p,done?'ok':'')+'</div>';
   }
-  return '<section class="sp-hero"><div class="sp-hero-top"><div><div class="sp-kick">ความพร้อมของคลัง</div><div class="sp-pct">'+st.pct+'<small>%</small></div></div>'+
-    '<div class="sp-hero-sub">ครบ '+st.ok+' จาก '+st.n+' รายการ</div></div>'+
-    '<div class="sp-ruler"><div class="sp-kick">ของที่มีอยู่ตอนนี้พอใช้ได้</div>'+row('น้ำดื่ม',cv.water)+row('อาหารหลัก',cv.food)+'</div></section>';
+  var ex=expiring(),nd=nextDue();
+  return '<section class="sp-hero"><div class="sp-hero-top"><div><div class="sp-kick">ระดับความพร้อมของคลัง</div><div class="sp-pct">'+st.pct+'<small>%</small></div></div>'+
+    '<div class="sp-hero-sub"><b>'+st.ok+'</b> / '+st.n+' รายการพร้อมใช้</div></div>'+
+    '<div class="sp-ruler"><div class="sp-kick">ระยะเวลาสำรองโดยประมาณ</div>'+row('น้ำดื่ม',cv.water)+row('อาหารหลัก',cv.food)+'</div>'+
+    '<div class="sp-kpis"><div><span>รายการที่ยังขาด</span><b>'+st.short.length+'</b></div><div><span>ใกล้หมดอายุ</span><b>'+ex.length+'</b></div><div><span>ตรวจครั้งถัดไป</span><b>'+fmtD(nd.due)+'</b></div></div></section>';
 }
 function todoCard(st,nd,ex){
   var rows='',exp=ex.filter(function(e){return e.days<=0}).length;
@@ -411,10 +413,10 @@ function render(){
   var a=document.activeElement,fk=a&&root.contains(a)?a.getAttribute('data-fk'):null,ss=null,se=null;
   try{ss=a.selectionStart;se=a.selectionEnd}catch(e){}
   var y=window.scrollY,s=state.settings,st=stats();
-  var head='<div class="panelhead"><div><h2>คลังเสบียงฉุกเฉิน</h2><p>ครอบครัว '+s.people+' คน · เตรียมไว้ '+s.days+' วัน · ตรวจทุก '+s.months+' เดือน</p></div><span class="pill">Supplies</span></div>';
+  var head='<header class="sp-pagehead"><div class="sp-brandmark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8.5 12 4l8 4.5v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 9h16M8 9v4h8V9M12 13v4"/></svg></div><div class="sp-pagecopy"><span class="sp-eyebrow">EMERGENCY READINESS</span><h2>คลังเสบียงฉุกเฉิน</h2><p>ครอบครัว '+s.people+' คน <i>·</i> '+s.days+' วัน <i>·</i> ตรวจทุก '+s.months+' เดือน</p></div><span class="sp-live"><i></i> พร้อมจัดการ</span></header>';
   var tabs='<nav class="sp-tabs" aria-label="เมนูคลังเสบียง">'+TABS.map(function(t){
     var dot=t[0]==='buy'&&st.short.length?'<span class="dot">'+st.short.length+'</span>':'';
-    return '<button data-act="tab" data-t="'+t[0]+'" aria-current="'+(ui.tab===t[0])+'">'+t[1]+dot+'</button>';
+    return '<button data-act="tab" data-t="'+t[0]+'" aria-current="'+(ui.tab===t[0])+'"><span class="sp-tabico" aria-hidden="true">'+t[2]+'</span><span>'+t[1]+'</span>'+dot+'</button>';
   }).join('')+'</nav>';
   root.innerHTML=head+tabs+'<div class="sp-view">'+VIEWS[ui.tab]()+'</div>';
   if(fk){var n=root.querySelector('[data-fk="'+fk+'"]');if(n){n.focus({preventScroll:true});try{if(ss!=null)n.setSelectionRange(ss,se)}catch(e){}}}

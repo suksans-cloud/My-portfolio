@@ -41,9 +41,3 @@
 - ปรับน้ำหนักเส้น ขนาดข้อความ และตำแหน่งป้าย “ใหม่” ให้สมดุลบนมือถือ
 - เพิ่มเวอร์ชัน Service Worker cache เพื่อให้ไฟล์ไอคอนชุดใหม่ถูกโหลด
 - ไม่เปลี่ยนตรรกะการทำงาน ข้อมูล การคำนวณ การซิงก์ หรือรูปแบบการจัดเก็บเดิม
-
-
-## v8 — Stable icon sizing
-- Locked Home, My Plan and My Tools icon tiles to a fixed 64px box and SVG glyphs to 36px.
-- Removed responsive 60px downscaling and press/transition scaling from shared menu icons to prevent layout shifts during reload.
-- Added a single final CSS override after legacy icon rules and bumped the service-worker cache key.

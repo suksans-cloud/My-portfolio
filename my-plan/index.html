@@ -127,6 +127,28 @@ html,body{max-width:100%;overflow-x:hidden}
 #retirement .ret-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(max-width:600px){#retirement .ret-hero-stat{grid-template-columns:1fr}#retirement .ret-grid,#retirement .ret-result-grid{grid-template-columns:1fr}#retirement .ret-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}#retirement .ret-tab{min-width:0}#retirement .ret-panel{padding:13px}#retirement .ret-title{font-size:22px;line-height:1.4}}
 
+
+/* ===== My Plan colorful icon consistency — same 64px scale as Home ===== */
+.menu.menu-grid .ico{width:64px;height:64px;min-width:64px;min-height:64px;border-radius:50%;
+  margin:0 0 9px;box-shadow:inset 0 0 0 1px rgba(35,55,75,.08),0 5px 14px rgba(35,55,75,.055)}
+.menu.menu-grid .ico svg{width:36px;height:36px;stroke-width:1.9}
+.menu.menu-grid button:nth-of-type(1) .ico{background:linear-gradient(145deg,#EAF1FF,#DCE7FF);color:#3566A3}
+.menu.menu-grid button:nth-of-type(2) .ico{background:linear-gradient(145deg,#E8F7F0,#D5EEE3);color:#21866B}
+.menu.menu-grid button:nth-of-type(3) .ico{background:linear-gradient(145deg,#FFF3DF,#FBE6B8);color:#A87516}
+.menu.menu-grid button:nth-of-type(4) .ico{background:linear-gradient(145deg,#F2EDFF,#E4DCFF);color:#7356A8}
+.menu.menu-grid button:nth-of-type(5) .ico{background:linear-gradient(145deg,#E5F5FA,#D4EDF5);color:#287C98}
+.menu.menu-grid button:nth-of-type(6) .ico{background:linear-gradient(145deg,#FCEAF1,#F6D9E5);color:#B34D78}
+.menu.menu-grid button:nth-of-type(7) .ico{background:linear-gradient(145deg,#EAF4E5,#D8EBCB);color:#56833D}
+.menu.menu-grid button:nth-of-type(8) .ico{background:linear-gradient(145deg,#E9EEFF,#D8E1FF);color:#4B65B2}
+.menu.menu-grid button:nth-of-type(9) .ico{background:linear-gradient(145deg,#FFF0E6,#F9DDCA);color:#B76A3A}
+.menu.menu-grid button:nth-of-type(10) .ico{background:linear-gradient(145deg,#E8F7F4,#D2EEE8);color:#278879}
+.menu.menu-grid button:nth-of-type(11) .ico{background:linear-gradient(145deg,#FFF4DF,#FBE6B8);color:#A87516}
+.menu.menu-grid button:nth-of-type(12) .ico{background:linear-gradient(145deg,#F2EDFF,#E4DCFF);color:#7356A8}
+.menu.menu-grid .ico svg{stroke:currentColor}
+.menu.menu-grid .ico svg .ac{stroke:currentColor;opacity:.78}
+.menu.menu-grid .ico svg .fl{fill:currentColor;fill-opacity:.15;stroke:currentColor}
+@media(max-width:360px){.menu.menu-grid .ico{width:60px;height:60px;min-width:60px;min-height:60px}.menu.menu-grid .ico svg{width:34px;height:34px}}
+
 </style><style id="mff-theme">
 /* match the main app (shell.css): grey page, white header, navy primary, slate text */
 body{background:var(--bg);color:var(--ink)}
@@ -184,7 +206,7 @@ body{display:flex;flex-direction:column;min-height:100vh}.footer{order:99;margin
 html[data-theme="dark"] .primary,html[data-theme="dark"] .menu.menu-grid button.tag-new .ico:after{color:#12151C}
 html[data-theme="dark"] .hero{box-shadow:0 8px 24px #0006}
 </style><script src="../themes.js"></script><script>window.TC=function(n,f){try{return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||f}catch(e){return f}};</script>
-</head><body>
+<style id="mff-no-flash">html{overscroll-behavior-y:contain;touch-action:manipulation}button,a,[role=button],.back{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}button,[role=button],.back,.hm-menu a{-webkit-user-select:none;user-select:none}</style><script src="../icon-system.js"></script></head><body>
 <header class="hero"><div class="top"><button class="back" onclick="location.href='../index.html'" aria-label="กลับหน้าหลัก">‹</button><div><p class="eyebrow">My Plan</p><h1>วางแผนการเงินครอบครัว</h1><p>วางแผนภาษี ประกันสังคม บ้าน รถ บัตรเครดิต เงินปันผล การลงทุน และเกษียณในที่เดียว</p></div></div></header>
 <main class="wrap"><button type="button" id="myPlanBack" class="secondary hidden" style="margin:0 0 14px;min-height:44px" aria-label="กลับไปหน้า My Plan">‹ กลับไปหน้า My Plan</button><nav class="menu menu-grid" aria-label="เลือกโปรแกรม"><div class="menu-title">โปรแกรมคำนวณ<small>เลือกเครื่องมือที่ต้องการวางแผน</small></div>
 <button data-tab="overview" class="tag-new"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><path class="ac" d="M14 17h6M17 14v6"/></svg></span><strong>สรุปภาพรวมแผน</strong><small>Overview</small></button>
@@ -1265,7 +1287,7 @@ function wire(ids,fn){ids.forEach(id=>{const el=g(id);if(el){el.addEventListener
 function init(){
   if(document.body.dataset.mp3)return;document.body.dataset.mp3='1';
   dbBuild(debts);kidBuild(kids);chipsInit();
-  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{const f=OPEN[b.dataset.tab];chipsRefresh();if(f)setTimeout(f,30)}));
+  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{const f=OPEN[b.dataset.tab];chipsRefresh();if(f){try{f()}catch(e){console.error(e)}}}));
   document.querySelectorAll('[data-fsub]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-fsub]').forEach(x=>x.classList.toggle('active',x===b));g('famEdu').classList.toggle('hidden',b.dataset.fsub!=='famEdu');g('famIns').classList.toggle('hidden',b.dataset.fsub!=='famIns');setTimeout(()=>{edRender();insRender()},30)}));
   wire(['tvPV','tvPMT','tvRate','tvYears','tvInfl','tvbPmt','tvbRate','tvbYears'],tvmExtra);
   wire(['homePrice','homeRate','homeYears','mcRate','mcYears'],mortExtra);
@@ -1356,5 +1378,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{try{if(window.MP)MP.refreshAll();}catch(e){}},200);});
 })();
 </script>
+
 
 </body></html>
