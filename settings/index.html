@@ -121,6 +121,10 @@
 .mff-compact .mff-settings-actions{margin-top:6px!important;display:flex;align-items:center;gap:10px}
 .mff-compact .mff-btn{min-height:36px!important;height:36px;padding:0 14px!important;font-size:12.5px!important;flex:none;width:auto!important}
 .mff-compact .mff-sync-status{margin:0!important;font-size:12px;flex:1}
+
+/* compact v31 */
+.mff-settings-body{padding:12px 14px 32px}.mff-settings-card{padding:12px 13px 11px;margin-bottom:10px;border-radius:16px}
+.mff-control-strip{margin:10px 14px 0;padding:9px}.mff-module-row{padding:6px 0}
 </style>
 <style>
 .mff-toggle{
@@ -343,6 +347,7 @@
       return '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #e6ebf2"><div style="min-width:0"><b style="font-size:13px">'+(r.type==='dca'?'📈 ':'🧾 ')+esc(r.name)+'</b><br><small style="color:var(--ink-soft)">'+w+(r.amount?' · ฿'+Number(r.amount).toLocaleString('th-TH'):'')+' · เตือนก่อน '+r.lead+' วัน'+(d?' · ครั้งถัดไป '+d.toLocaleDateString('th-TH',{day:'numeric',month:'short'}):'')+'</small></div><button type="button" data-i="'+i+'" aria-label="ลบ" style="border:0;background:none;font-size:20px;min-width:40px;min-height:40px">×</button></div>';
     }).join(''):'<div style="font-size:12.5px;color:var(--ink-soft);padding:6px 0">ยังไม่มีรายการ</div>';
   }
+  window.addEventListener('mff-local-updated',function(){try{paint()}catch(e){}});
   $('remMode').onchange=function(){var e=this.value==='every';$('remDay').style.display=e?'none':'';$('remEveryBox').style.display=e?'flex':'none'};
   $('remList').onclick=function(e){var b=e.target.closest('button');if(!b)return;var l=MFFRem.load();l.splice(+b.dataset.i,1);MFFRem.save(l);paint()};
   $('remAdd').onclick=function(){
@@ -440,6 +445,10 @@ document.getElementById('btnSaveSheets').addEventListener('click',()=>{
 renderSheetsStatus();
 
 /* ---------- Smart Sync: three-way merge with conflict protection ---------- */
+const glD=v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v||''))?String(v):'';
+const glX=g=>Object.assign({},g,{due:glD(g.due),freq:(g.freq==='day'||g.freq==='month')?g.freq:'week',times:Math.max(0,Number(g.times)||0),checkins:Array.from(new Set((Array.isArray(g.checkins)?g.checkins:[]).map(String).filter(glD))).sort()});
+const drGuard=v=>{v=String(v==null?'':v);return /^[=+\-@]/.test(v)?"'"+v:v;};
+const bzNorm=b=>({id:String(b.id),kind:b.kind==='debt'?'debt':'asset',category:b.category||'',name:b.name||'',owner:b.owner||'',value:Number(b.value)||0,cost:Number(b.cost)||0,date:b.date||'',creditor:b.creditor||'',balance:Number(b.balance)||0,principal:Number(b.principal)||0,monthly:Number(b.monthly)||0,rate:Number(b.rate)||0,dueDay:b.dueDay?(Number(b.dueDay)||''):'',linkedId:b.linkedId||'',note:b.note||'',createdAt:b.createdAt||'',updatedAt:b.updatedAt||''});
 const SYNC_TARGETS = [
   { key:'daily', name:'📆 ค่าใช้จ่ายรายวัน', cacheKey:'mff_daily_cache_v1', tab:'DailyExpenses', range:'A:G',
     headers:['ID','Date','Category','Amount','Note','CreatedAt','UpdatedAt'],
@@ -457,18 +466,26 @@ const SYNC_TARGETS = [
     headers:['ID','Photo','FirstName','LastName','BloodGroup','Address','Email','Phone','CreatedAt','UpdatedAt','Relation','BankAccounts','IDCard','Documents'],
     toRow:p=>[p.id,p.photo,p.firstName,p.lastName,p.bloodGroup,p.address,p.email,(p.phone?("'"+p.phone):''),p.createdAt,p.updatedAt,p.relation||'',JSON.stringify(p.bankAccounts||[]),(p.idCard?("'"+p.idCard):''),JSON.stringify(p.documents||[])],
     fromRow:r=>{ let bank=[],docs=[]; try{const a=JSON.parse(r[11]||'[]');if(Array.isArray(a))bank=a;}catch(e){} try{const a=JSON.parse(r[13]||'[]');if(Array.isArray(a))docs=a;}catch(e){} return {id:r[0],photo:r[1]||'',firstName:r[2]||'',lastName:r[3]||'',bloodGroup:r[4]||'',address:r[5]||'',email:r[6]||'',phone:r[7]||'',createdAt:r[8]||'',updatedAt:r[9]||'',relation:r[10]||'',bankAccounts:bank,idCard:r[12]||'',documents:docs}; }, lastSyncKey:'sheet_last_sync_profile' },
+  { key:'business', name:'💼 My Business', cacheKey:'mff_business_cache_v1', tab:'Business', range:'A:R', norm:bzNorm,
+    headers:['ID','Kind','Category','Name','Owner','Value','Cost','Date','Creditor','Balance','Principal','Monthly','Rate','DueDay','LinkedId','Note','CreatedAt','UpdatedAt'],
+    toRow:b=>[b.id,b.kind||'asset',b.category||'',b.name||'',b.owner||'',b.value||0,b.cost||0,b.date?"'"+b.date:'',b.creditor||'',b.balance||0,b.principal||0,b.monthly||0,b.rate||0,b.dueDay||'',b.linkedId||'',b.note||'',b.createdAt||'',b.updatedAt||''],
+    fromRow:r=>({id:r[0],kind:r[1]==='debt'?'debt':'asset',category:r[2]||'',name:r[3]||'',owner:r[4]||'',value:Number(r[5])||0,cost:Number(r[6])||0,date:r[7]||'',creditor:r[8]||'',balance:Number(r[9])||0,principal:Number(r[10])||0,monthly:Number(r[11])||0,rate:Number(r[12])||0,dueDay:r[13]?Number(r[13])||'':'',linkedId:r[14]||'',note:r[15]||'',createdAt:r[16]||'',updatedAt:r[17]||''}), lastSyncKey:'sheet_last_sync_business' },
   { key:'notes', name:'📝 My Notes', cacheKey:'mff_notes_cache_v1', tab:'Notes', range:'A:M',
     headers:['ID','Title','Body','Kind','Items','Color','Pinned','Due','CalEventId','Archived','CreatedAt','UpdatedAt','DueTime'],
     toRow:n=>[n.id,n.title||'',n.body||'',n.kind||'note',JSON.stringify(n.items||[]),n.color||'default',n.pinned?1:0,n.due||'',n.calId||'',n.archived?1:0,n.createdAt||'',n.updatedAt||'',(n.dueTime?("'"+n.dueTime):'')],
     fromRow:r=>{ let it=[]; try{const a=JSON.parse(r[4]||'[]');if(Array.isArray(a))it=a;}catch(e){} return {id:r[0],title:r[1]||'',body:r[2]||'',kind:r[3]||'note',items:it,color:r[5]||'default',pinned:Number(r[6])?1:0,due:r[7]||'',calId:r[8]||'',archived:Number(r[9])?1:0,createdAt:r[10]||'',updatedAt:r[11]||'',...(/^\d{1,2}:\d{2}/.test(String(r[12]||''))?{dueTime:String(r[12]).replace(/^(\d{1,2}):(\d{2}).*$/,(m,h,mi)=>String(h).padStart(2,'0')+':'+mi)}:{})}; }, lastSyncKey:'sheet_last_sync_notes' },
-  { key:'goals', name:'🎯 My Goals', cacheKey:'mff_goals_cache_v1', tab:'Goals', range:'A:N',
-    headers:['ID','Title','Category','Year','Kind','Target','Current','Unit','Link','Steps','Done','CreatedAt','UpdatedAt','Period'],
-    toRow:g=>[g.id,g.title||'',g.category||'',g.year||'',g.kind||'steps',g.target||0,g.current||0,g.unit||'',g.link||'',JSON.stringify(g.steps||[]),g.done?1:0,g.createdAt||'',g.updatedAt||'',g.period||'year'],
-    fromRow:r=>{ let st=[]; try{const a=JSON.parse(r[9]||'[]');if(Array.isArray(a))st=a;}catch(e){} return {id:r[0],title:r[1]||'',category:r[2]||'',year:Number(r[3])||new Date().getFullYear(),kind:r[4]||'steps',target:Number(r[5])||0,current:Number(r[6])||0,unit:r[7]||'บาท',link:r[8]||'',steps:st,done:Number(r[10])?1:0,createdAt:r[11]||'',updatedAt:r[12]||'',period:r[13]==='month'?'month':'year'}; }, lastSyncKey:'sheet_last_sync_goals' },
+  { key:'goals', name:'🎯 My Goals', cacheKey:'mff_goals_cache_v1', tab:'Goals', range:'A:R', norm:glX,
+    headers:['ID','Title','Category','Year','Kind','Target','Current','Unit','Link','Steps','Done','CreatedAt','UpdatedAt','Period','Due','Freq','Times','Checkins'],
+    toRow:g=>[g.id,g.title||'',g.category||'',g.year||'',g.kind||'steps',g.target||0,g.current||0,g.unit||'',g.link||'',JSON.stringify(g.steps||[]),g.done?1:0,g.createdAt||'',g.updatedAt||'',g.period||'year',g.due?"'"+g.due:'',g.freq||'week',g.times||0,JSON.stringify(g.checkins||[])],
+    fromRow:r=>{ let st=[]; try{const a=JSON.parse(r[9]||'[]');if(Array.isArray(a))st=a;}catch(e){} return {id:r[0],title:r[1]||'',category:r[2]||'',year:Number(r[3])||new Date().getFullYear(),kind:r[4]||'steps',target:Number(r[5])||0,current:Number(r[6])||0,unit:r[7]||'บาท',link:r[8]||'',steps:st,done:Number(r[10])?1:0,createdAt:r[11]||'',updatedAt:r[12]||'',period:r[13]==='month'?'month':'year',...(()=>{let ck=[];try{const a=JSON.parse(r[17]||'[]');if(Array.isArray(a))ck=a;}catch(e){} return glX({due:r[14]||'',freq:r[15]||'week',times:Number(r[16])||0,checkins:ck});})()}; }, lastSyncKey:'sheet_last_sync_goals' },
   { key:'wishlist', name:'🛒 Wish List หนังสือ', cacheKey:'mff_wishlist_cache_v1', tab:'Wishlist', range:'A:H',
     headers:['ID','Title','Author','Year','Status','BoughtAt','CreatedAt','UpdatedAt'],
     toRow:w=>[w.id,w.title||'',w.author||'',w.year||'',w.status==='bought'?'bought':'want',w.boughtAt||'',w.createdAt||'',w.updatedAt||''],
     fromRow:r=>({id:r[0],title:r[1]||'',author:r[2]||'',year:Number(r[3])||new Date().getFullYear(),status:r[4]==='bought'?'bought':'want',boughtAt:r[5]||'',createdAt:r[6]||'',updatedAt:r[7]||''}), lastSyncKey:'sheet_last_sync_wishlist' },
+  { key:'diary', name:'📔 My Diary', cacheKey:'mff_diary_cache_v1', tab:'Diary', range:'A:G',
+    headers:['ID','Date','Title','Body','Mood','CreatedAt','UpdatedAt'],
+    toRow:e=>[e.id,"'"+(e.date||''),drGuard(e.title),drGuard(e.body),e.mood||0,e.createdAt||'',e.updatedAt||''],
+    fromRow:r=>({id:r[0],date:((String(r[1]||'').replace(/^'/,'').match(/^\d{4}-\d{2}-\d{2}$/)||[])[0])||String(r[0]||'').replace(/^dy_/,'').slice(0,10),title:r[2]||'',body:r[3]||'',mood:Number(r[4])||0,createdAt:r[5]||'',updatedAt:r[6]||''}), lastSyncKey:'sheet_last_sync_diary' },
   { key:'settings', name:'⚙️ งบและรายการประจำ', cacheKey:'mff_settings_cache_v1', tab:'AppSettings', range:'A:C',
     headers:['ID','Value','UpdatedAt'],
     toRow:s=>[s.id,s.value,s.updatedAt],
@@ -477,19 +494,24 @@ const SYNC_TARGETS = [
 const SYNC_BASE_PREFIX='mff_sync_base_v1_';
 const SYNC_DIRTY_PREFIX='mff_sync_dirty_v1_';
 
+/* เร็วขึ้น: จำว่าแท็บไหนมีแล้ว (ต่อรอบซิงก์) จะได้ไม่ต้องถาม Google ซ้ำทุกครั้งที่อ่าน/เขียน */
+const _tabsOK=new Set();
+function syncResetCache(){_tabsOK.clear();}
 async function syncAllSheetsApi(token,url,opts){
   const r=await fetch(url,Object.assign({headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}},opts||{}));
   if(r.status===401||r.status===403) throw new Error('สิทธิ์ Google หมดอายุ กรุณาเชื่อมต่อใหม่');
-  if(!r.ok) throw new Error(await r.text());
+  if(!r.ok){const tx=await r.text();if(/Unable to parse range|not found/i.test(tx))_tabsOK.clear();throw new Error(tx);}
   return r.status===204?{}:r.json();
 }
 async function syncAllEnsureTab(token,sid,tab,headers){
+  const ck=sid+'|'+tab;if(_tabsOK.has(ck))return;
   const meta=await syncAllSheetsApi(token,`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}?fields=sheets.properties`);
   const titles=(meta.sheets||[]).map(x=>x.properties.title);
   if(!titles.includes(tab)){
     await syncAllSheetsApi(token,`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}:batchUpdate`,{method:'POST',body:JSON.stringify({requests:[{addSheet:{properties:{title:tab}}}]})});
     await syncAllSheetsApi(token,`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}/values/${tab}!A1?valueInputOption=USER_ENTERED`,{method:'PUT',body:JSON.stringify({range:`${tab}!A1`,majorDimension:'ROWS',values:[headers]})});
   }
+  _tabsOK.add(ck);
 }
 async function ensureSheetsTokenForSyncAll(cid){
   const cached=window.MFFGoogleSession?.getSheetsToken();
@@ -512,10 +534,10 @@ function same(a,b){return JSON.stringify(stable(a))===JSON.stringify(stable(b));
 function listMap(list){const m=new Map();(list||[]).filter(x=>x&&x.id).forEach(x=>m.set(String(x.id),x));return m;}
 const SYNC_BACKUP_KEY='mff_sync_backup_v2';
 const SYNC_HISTORY_KEY='mff_sync_history_v2';
-function getBase(t){try{return JSON.parse(localStorage.getItem(SYNC_BASE_PREFIX+t.key)||'[]')||[];}catch(e){return [];}}
+function getBase(t){try{const l=JSON.parse(localStorage.getItem(SYNC_BASE_PREFIX+t.key)||'[]')||[];return t.norm?l.map(t.norm):l;}catch(e){return [];}}
 function setBase(t,list){localStorage.setItem(SYNC_BASE_PREFIX+t.key,JSON.stringify(list||[]));localStorage.setItem(t.lastSyncKey,new Date().toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit'}));}
-function getLocal(t){try{return JSON.parse(localStorage.getItem(t.cacheKey)||'[]')||[];}catch(e){return [];}}
-function setLocal(t,list){localStorage.setItem(t.cacheKey,JSON.stringify(list||[]));localStorage.removeItem(SYNC_DIRTY_PREFIX+t.key);}
+function getLocal(t){try{const l=JSON.parse(localStorage.getItem(t.cacheKey)||'[]')||[];return t.norm?l.map(t.norm):l;}catch(e){return [];}}
+function setLocal(t,list){localStorage.setItem(t.cacheKey,JSON.stringify(list||[]));localStorage.removeItem(SYNC_DIRTY_PREFIX+t.key);try{window.dispatchEvent(new Event('mff-local-updated'))}catch(e){}}
 function markDirty(t){localStorage.setItem(SYNC_DIRTY_PREFIX+t.key,'1');}
 function isDirty(t){return localStorage.getItem(SYNC_DIRTY_PREFIX+t.key)==='1';}
 function createBackup(label,remoteByKey){
@@ -542,6 +564,25 @@ function renderSyncHistory(){
 }
 function recordLabel(t,r){if(!r)return '(ลบรายการ)';return r.title||r.name||r.category||r.date||r.month||r.firstName||r.id||'';}
 
+/* อ่านทุกแท็บในคำขอเดียว (1 ครั้งเช็คแท็บ + 1 ครั้ง batchGet) แทนที่จะอ่านทีละแท็บ */
+function sameById(a,b){
+  const A=listMap(a),B=listMap(b);if(A.size!==B.size)return false;
+  for(const [id,v] of A){if(!B.has(id)||!same(v,B.get(id)))return false;}
+  return true;
+}
+async function readAllRemote(token,sid,targets){
+  const base=`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}`;
+  const meta=await syncAllSheetsApi(token,base+'?fields=sheets.properties');
+  const have=new Set((meta.sheets||[]).map(x=>x.properties.title));
+  for(const t of targets){ if(have.has(t.tab))_tabsOK.add(sid+'|'+t.tab); else await syncAllEnsureTab(token,sid,t.tab,t.headers); }
+  const qs=targets.map(t=>'ranges='+encodeURIComponent(t.tab+'!'+t.range)).join('&');
+  const got=await syncAllSheetsApi(token,`${base}/values:batchGet?${qs}`);
+  const vr=got.valueRanges||[];
+  if(vr.length!==targets.length) throw new Error('batchGet ตอบกลับไม่ครบ');
+  const out={};
+  targets.forEach((t,i)=>{out[t.key]=(vr[i].values||[]).slice(1).filter(r=>r[0]).map(t.fromRow);});
+  return out;
+}
 async function readRemote(token,sid,t){
   await syncAllEnsureTab(token,sid,t.tab,t.headers);
   const got=await syncAllSheetsApi(token,`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}/values/${t.tab}!${t.range}`);
@@ -594,8 +635,8 @@ async function safeWriteRemote(token,sid,t,list,expectedRemote){
   throw lastErr||new Error('ยืนยันข้อมูลหลัง Sync ไม่สำเร็จ');
 }
 
-async function smartSyncOne(token,sid,t){
-  const local=getLocal(t), base=getBase(t), remote=await readRemote(token,sid,t);
+async function smartSyncOne(token,sid,t,prefetched){
+  const local=getLocal(t), base=getBase(t), remote=Array.isArray(prefetched)?prefetched:await readRemote(token,sid,t);
   const L=listMap(local),R=listMap(remote),B=listMap(base);
   const merged=[];const conflicts=[];const ids=new Set([...L.keys(),...R.keys(),...B.keys()]);
   for(const id of ids){
@@ -620,7 +661,7 @@ async function smartSyncOne(token,sid,t){
       merged.length=0; byId.forEach(x=>merged.push(x));
       await safeWriteRemote(token,sid,t,merged,remote);setLocal(t,merged);setBase(t,merged);
       addSyncHistory('Conflict → เครื่อง',`${t.name}: ${conflicts.length} รายการ (เก็บรายการที่ไม่ชนกันไว้)`);
-      return {status:'resolved-local',count:merged.length,conflicts:conflicts.length,remote};
+      return {status:'resolved-local',count:merged.length,conflicts:conflicts.length,remote,wrote:true};
     }
     if(choice==='remote'){
       // Keep all non-conflicting three-way merges. Resolve only the conflicting IDs with remote values.
@@ -632,9 +673,13 @@ async function smartSyncOne(token,sid,t){
       return {status:'resolved-remote',count:merged.length,conflicts:conflicts.length,remote};
     }
   }
+  if(sameById(merged,remote)){ /* บน Sheet ตรงกับที่จะเขียนอยู่แล้ว → ไม่ต้องเขียน/อ่านตรวจซ้ำ */
+    setLocal(t,merged);setBase(t,merged);
+    return {status:'synced',count:merged.length,remote,wrote:false};
+  }
   await safeWriteRemote(token,sid,t,merged,remote);setLocal(t,merged);setBase(t,merged);
   addSyncHistory('Smart Sync',`${t.name}: ${merged.length} รายการ`);
-  return {status:'synced',count:merged.length,remote};
+  return {status:'synced',count:merged.length,remote,wrote:true};
 }
 
 
@@ -687,20 +732,27 @@ async function runSmartSync(opts){
   const preSyncQueueIds=(window.MFFDataSafety?.exportQueue?.()||[]).map(x=>x.qid);
   try{
     const token=await ensureSheetsTokenForSyncAll(cid);if(!token)throw new Error('ขอสิทธิ์ Google Sheets ไม่สำเร็จ');localStorage.setItem('google_sheets_connected','1');
-    const remoteBackup={};
-    for(const t of SYNC_TARGETS){try{remoteBackup[t.key]=await readRemote(token,sid,t);}catch(e){remoteBackup[t.key]=null;}}
-    createBackup('ก่อน Smart Sync',remoteBackup);
-    addSyncHistory('Backup','สร้าง Snapshot ก่อน Smart Sync');
-    for(const t of SYNC_TARGETS){updateSyncAllProgress(done,total,'🔄 ตรวจ '+t.name);try{const r=await smartSyncOne(token,sid,t);if(r.status==='conflict')conf+=r.conflicts||0;}catch(e){conf++;fail++;toast(t.name+' ซิงก์ไม่สำเร็จ: '+e.message);}done++;updateSyncAllProgress(done,total,t.name+' ✓');renderSyncModuleRows();renderModuleStatus();}
-    updateSyncAllProgress(done,total,'🔄 📊 My Portfolio');
-    try{await runPortfolioSmartSync();done++;updateSyncAllProgress(done,total,'📊 My Portfolio ✓');}catch(e){conf++;fail++;done++;toast('My Portfolio Smart Sync ไม่สำเร็จ: '+e.message);}
+    syncResetCache();
+    /* อ่านทุกแท็บครั้งเดียว (ใช้ทั้งเป็น Snapshot และเป็นข้อมูลฝั่ง Sheet ของแต่ละโมดูล) */
+    let remoteBackup={};
+    try{remoteBackup=await readAllRemote(token,sid,SYNC_TARGETS);}
+    catch(e){remoteBackup={};for(const t of SYNC_TARGETS){try{remoteBackup[t.key]=await readRemote(token,sid,t);}catch(e2){remoteBackup[t.key]=null;}}}
+    /* ถ้าทุกโมดูลตรงกับ Sheet แล้ว ไม่ต้องสำรอง/เขียนอะไร */
+    const needBackup=SYNC_TARGETS.some(t=>!Array.isArray(remoteBackup[t.key])||!sameById(getLocal(t),remoteBackup[t.key]));
+    if(needBackup){createBackup('ก่อน Smart Sync',remoteBackup);addSyncHistory('Backup','สร้าง Snapshot ก่อน Smart Sync');}
+    const written=[];
+    for(const t of SYNC_TARGETS){updateSyncAllProgress(done,total,'🔄 ตรวจ '+t.name);try{const r=await smartSyncOne(token,sid,t,remoteBackup[t.key]);if(r.status==='conflict')conf+=r.conflicts||0;if(r.wrote)written.push(t);}catch(e){conf++;fail++;toast(t.name+' ซิงก์ไม่สำเร็จ: '+e.message);}done++;updateSyncAllProgress(done,total,t.name+' ✓');}
+    renderSyncModuleRows();renderModuleStatus();
+    /* My Portfolio โหลดทั้งหน้าใน iframe → ซิงก์อัตโนมัติทำไม่เกินทุก 10 นาที (กดซิงก์เองทำทุกครั้ง) */
+    const PK_AT='mff_portfolio_smart_at',skipPf=opts.auto&&(Date.now()-Number(localStorage.getItem(PK_AT)||0)<600000);
+    if(skipPf){done++;updateSyncAllProgress(done,total,'📊 My Portfolio (ข้าม: เพิ่งซิงก์)');}
+    else{
+      updateSyncAllProgress(done,total,'🔄 📊 My Portfolio');
+      try{await runPortfolioSmartSync();localStorage.setItem(PK_AT,String(Date.now()));done++;updateSyncAllProgress(done,total,'📊 My Portfolio ✓');}catch(e){conf++;fail++;done++;toast('My Portfolio Smart Sync ไม่สำเร็จ: '+e.message);}
+    }
     if(!conf){
-      // One final read-only verification makes the first Sync authoritative before we show success.
-      for(const t of SYNC_TARGETS){
-        const verify=await readRemote(token,sid,t);
-        if(!same(verify,getLocal(t))) throw new Error(t.name+' ยังยืนยันข้อมูลหลัง Sync ไม่สำเร็จ');
-      }
-      addSyncHistory('Verified Sync','ตรวจสอบข้อมูลหลัง Sync ครบทุกโมดูล');
+      /* ไม่ต้องอ่านตรวจซ้ำอีกรอบ: safeWriteRemote อ่านกลับมาเทียบแล้วว่าตรงกับที่เขียน (verified) ก่อนจะ setLocal ทุกโมดูลที่เขียน */
+      addSyncHistory('Verified Sync',written.length?('ตรวจสอบหลังเขียน '+written.length+' โมดูล'):'ข้อมูลตรงกับ Google Sheets แล้ว ไม่มีอะไรต้องเขียน');
     }
     statusEl.innerHTML=conf?`<span class="warn">⚠️ ซิงก์เสร็จแล้ว แต่มี ${conf} จุดที่ต้องตรวจสอบ</span>`:'<span class="ok">✅ ซิงก์สำเร็จและตรวจสอบข้อมูลล่าสุดแล้ว</span>';
     // Queue Safety: clear exactly the items that were already queued when this sync began.
@@ -708,7 +760,7 @@ async function runSmartSync(opts){
     // any unrelated module writing during the run would keep re-populating it and the
     // badge would look permanently "not synced" even on a fully successful sync.)
     if(!fail && preSyncQueueIds.length && window.MFFDataSafety?.removeFromQueue){
-      window.MFFDataSafety.removeFromQueue(preSyncQueueIds);
+      dropSyncedQueue(preSyncQueueIds);
     }
     if(!opts.silent) toast(conf?'ซิงก์เสร็จแล้ว มีข้อมูลชนกันให้ตรวจสอบ':'ซิงก์ทั้งหมดเรียบร้อย');
   }catch(e){statusEl.innerHTML='<span class="warn">⚠️ '+esc(e.message||e)+'</span>';if(opts.auto) throw e;}
@@ -731,12 +783,12 @@ async function runSyncAll(dir){
   if(!cid||!sid){toast('กรุณากรอก Client ID / Sheet ID ก่อน');return;}
   const actionText=dir==='pull'?'บังคับดึงจาก Google Sheets จะทับข้อมูลในเครื่อง':'บังคับส่งจากเครื่องจะทับข้อมูลใน Google Sheets';
   if(!confirm(actionText+'\n\nควรใช้เฉพาะเมื่อแน่ใจว่าต้องการทับข้อมูล ต้องการดำเนินการต่อหรือไม่?'))return;
-  setSyncAllBusy(true);const statusEl=document.getElementById('statusSyncAll');let done=0;const total=SYNC_TARGETS.length+1;
+  setSyncAllBusy(true);syncResetCache();const statusEl=document.getElementById('statusSyncAll');let done=0;const total=SYNC_TARGETS.length+1;
   const preSyncQueueIds=(window.MFFDataSafety?.exportQueue?.()||[]).map(x=>x.qid);
   try{const token=await ensureSheetsTokenForSyncAll(cid);if(!token)throw new Error('ขอสิทธิ์ Google Sheets ไม่สำเร็จ');
     const remoteBackup={};for(const t of SYNC_TARGETS){try{remoteBackup[t.key]=await readRemote(token,sid,t);}catch(e){remoteBackup[t.key]=null;}}
     createBackup('ก่อน Force Sync',remoteBackup);addSyncHistory('Backup','สร้าง Snapshot ก่อน Force Sync');
-    for(const t of SYNC_TARGETS){updateSyncAllProgress(done,total,(dir==='pull'?'⬇️ ':'⬆️ ')+t.name);const remote=await readRemote(token,sid,t);if(dir==='pull'){setLocal(t,remote);setBase(t,remote);}else{const local=getLocal(t);await safeWriteRemote(token,sid,t,local,remote);setBase(t,local);}done++;updateSyncAllProgress(done,total,t.name+' ✓');}updateSyncAllProgress(done,total,'📊 My Portfolio');await runPortfolioSyncInFrame(dir);done++;updateSyncAllProgress(done,total,'📊 My Portfolio ✓');statusEl.innerHTML='<span class="ok">✅ บังคับซิงก์เสร็จแล้ว</span>';if(preSyncQueueIds.length&&window.MFFDataSafety?.removeFromQueue)window.MFFDataSafety.removeFromQueue(preSyncQueueIds);renderSyncModuleRows();renderModuleStatus();}
+    for(const t of SYNC_TARGETS){updateSyncAllProgress(done,total,(dir==='pull'?'⬇️ ':'⬆️ ')+t.name);const remote=await readRemote(token,sid,t);if(dir==='pull'){setLocal(t,remote);setBase(t,remote);}else{const local=getLocal(t);await safeWriteRemote(token,sid,t,local,remote);setBase(t,local);}done++;updateSyncAllProgress(done,total,t.name+' ✓');}updateSyncAllProgress(done,total,'📊 My Portfolio');await runPortfolioSyncInFrame(dir);done++;updateSyncAllProgress(done,total,'📊 My Portfolio ✓');statusEl.innerHTML='<span class="ok">✅ บังคับซิงก์เสร็จแล้ว</span>';if(preSyncQueueIds.length&&window.MFFDataSafety?.removeFromQueue)dropSyncedQueue(preSyncQueueIds);renderSyncModuleRows();renderModuleStatus();}
   catch(e){statusEl.innerHTML='<span class="warn">⚠️ หยุดที่ '+done+'/'+SYNC_TARGETS.length+' — '+esc(e.message||e)+'</span>';}
   finally{setSyncAllBusy(false);}
 }
@@ -825,6 +877,13 @@ function autoRetryState(){try{return JSON.parse(localStorage.getItem(AUTO_RETRY_
 function saveAutoRetryState(v){try{localStorage.setItem(AUTO_RETRY_KEY,JSON.stringify(v))}catch(e){}}
 function autoSyncEnabled(){const v=localStorage.getItem(AUTO_SYNC_KEY);return v===null?true:v==='1';}
 function renderAutoSyncToggle(){const cb=document.getElementById('autoSyncToggle'),track=document.getElementById('autoSyncTrack'),row=document.getElementById('autoSyncRow');if(!cb||!track)return;const on=autoSyncEnabled();cb.classList.toggle('on',on);cb.setAttribute('aria-checked',String(on));track.setAttribute('aria-checked',String(on));if(row)row.setAttribute('aria-pressed',String(on));}
+function dropSyncedQueue(ids){
+  try{
+    const ds=window.MFFDataSafety; if(!ds||!ds.removeFromQueue)return;
+    const pf=(ds.exportQueue?.()||[]).filter(x=>x&&x.key==='khlangthun_portfolio_oldui_latest_v4').map(x=>x.qid); /* Portfolio ซิงก์ในรอบเดียวกันแล้ว */
+    ds.removeFromQueue((ids||[]).concat(pf));
+  }catch(e){}
+}
 function queueItems(){try{return window.MFFDataSafety?.exportQueue?.()||[]}catch(e){return[];}}
 function renderOfflineQueue(){
   const q=queueItems();
@@ -951,7 +1010,8 @@ const MODULE_AUDIT_TARGETS=[
   {key:'monthly',name:'ค่าใช้จ่ายรายเดือน',url:'../money/monthly.html'},
   {key:'portfolio',name:'My Portfolio',url:'../portfolio/index.html'},
   {key:'bookshelf',name:'My Bookshelf',url:'../bookshelf/index.html'},
-  {key:'profile',name:'My Profile',url:'../profile/index.html'}
+  {key:'profile',name:'My Family',url:'../profile/family.html'},
+  {key:'business',name:'My Business',url:'../profile/business.html'}
 ];
 function auditModule(t){return new Promise(resolve=>{
   const f=document.createElement('iframe'); f.style.cssText='position:fixed;width:1px;height:1px;left:-10000px;top:-10000px;border:0;opacity:0;pointer-events:none';
@@ -1031,6 +1091,7 @@ function renderModuleStatus(){
     {name:'My Portfolio', key:'sheet_last_sync'},
     {name:'My Bookshelf', key:'sheet_last_sync_bookshelf'},
     {name:'My Profile', key:'sheet_last_sync_profile'},
+    {name:'My Business', key:'sheet_last_sync_business'},
     {name:'งบและรายการประจำ', key:'sheet_last_sync_settings'},
   ];
   const detail=document.getElementById('statusPerModule');
@@ -1135,5 +1196,6 @@ window.addEventListener('mff:data-safety',function(e){
 })();
 </script>
 
+<script src="../icon-system.js"></script>
 </body>
 </html>
