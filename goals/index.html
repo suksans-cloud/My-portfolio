@@ -51,13 +51,48 @@
 
 /* compact v31 */
 .gl-sum{padding:9px 12px}.gl-card{margin:6px 14px 0;padding:8px 11px}.gl-st{min-height:26px}
+
+/* ===== My Goals: align with the shared My Plan module shell ===== */
+.gl-back{
+  display:inline-flex;align-items:center;gap:7px;
+  min-height:40px;padding:0 13px;border:1px solid var(--line);
+  border-radius:13px;background:var(--surface);color:var(--ink);
+  font-size:14px;font-weight:700;opacity:1;
+  box-shadow:var(--shadow-card)
+}
+.gl-back svg{width:20px;height:20px;flex:none}
+.gl-year{gap:14px;padding-top:14px}
+.gl-year button{width:42px;height:42px;border-radius:14px;font-size:24px}
+.gl-year b{font-size:20px;min-width:150px}
+@media(min-width:760px){
+  .mff-app{max-width:1100px;width:calc(100% - 48px);margin:0 auto 40px;padding-bottom:40px}
+  .mff-hero-wrap{border-radius:0 0 30px 30px;padding-bottom:30px!important}
+  .mff-topbar{padding:22px 30px 10px}
+  .mff-hero{padding:10px 30px 18px!important}
+  .mff-hero h1{font-size:28px!important;white-space:normal!important}
+  .gl-year{padding:22px 24px 0}
+  .gl-sum{margin:16px 24px 0;padding:18px 22px}
+  .gl-sum .big{font-size:30px}
+  #list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:14px 24px 0;align-items:start}
+  .gl-card{margin:0;padding:16px 18px;border-radius:18px}
+  .gl-card h3{font-size:16px}
+  .gl-st{font-size:14px;min-height:32px}
+  .gl-fab{right:max(28px,calc((100vw - 1100px)/2 + 28px));bottom:28px;width:62px;height:62px}
+  .gl-modal{align-items:center;padding:24px}
+  .gl-sheet{max-width:620px;max-height:88vh;border-radius:22px;padding:22px}
+}
+@media(min-width:1200px){
+  .mff-app{max-width:1100px}
+  #list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
 </style>
 <style id="mff-no-flash">html{overscroll-behavior-y:contain;touch-action:manipulation}button,a,[role=button],.back{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}button,[role=button],.back,.hm-menu a{-webkit-user-select:none;user-select:none}</style><script src="../icon-system.js"></script></head>
 <body>
 <div class="mff-app">
   <div class="mff-hero-wrap" style="padding-bottom:20px;border-radius:0 0 28px 28px">
     <div class="mff-topbar">
-      <a class="back" href="../my-plan/index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 5 8 12l7 7"/></svg>My Plan</a>
+      <a class="back gl-back" href="../my-plan/index.html" aria-label="กลับไปหน้า My Plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 5 8 12l7 7"/></svg><span>กลับไป My Plan</span></a>
       <span></span>
     </div>
     <div class="mff-hero" style="padding-top:0">
